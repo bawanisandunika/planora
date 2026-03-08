@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Calendar, Users, Plus, Edit, Eye, MapPin, Clock, Trash2, ChevronDown, ChevronUp, User, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { GoogleGenAI } from '@google/genai';
 
 interface Event {
   id: number;
@@ -56,6 +57,9 @@ const OrganizerDashboard: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+  const [schedulingSuggestion, setSchedulingSuggestion] = useState('');
+  const [isGeneratingSchedule, setIsGeneratingSchedule] = useState(false);
 
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -94,6 +98,84 @@ const OrganizerDashboard: React.FC = () => {
     }
   };
 
+  const generateDescription = async () => {
+    if (!newEvent.title || !newEvent.category) {
+      alert("Please fill in the Event Title and Category first to generate a description.");
+      return;
+    }
+    
+    setIsGeneratingDesc(true);
+    try {
+      const prompt = `Write a short, engaging description for an event titled "${newEvent.title}".
+Category: ${newEvent.category}
+Location: ${newEvent.location || 'TBD'}
+Date: ${newEvent.date || 'TBD'}
+Make it sound exciting and professional.`;
+
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        alert("Gemini API key is not configured.");
+        setIsGeneratingDesc(false);
+        return;
+      }
+
+      const ai = new GoogleGenAI({ apiKey: apiKey });
+      
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash", 
+        contents: prompt,
+      });
+      
+      const text = response.text;
+      
+      if (text) {
+        setNewEvent({ ...newEvent, description: text });
+      } else {
+        console.error("Failed to generate description text from result:", response);
+        alert("Failed to generate description. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error generating description:", error);
+      alert("Error generating description. Please try again.");
+    } finally {
+      setIsGeneratingDesc(false);
+    }
+  };
+
+  const generateSchedulingAdvice = async () => {
+    if (!newEvent.category) {
+      alert("Please select a Category first to get scheduling advice.");
+      return;
+    }
+
+    setIsGeneratingSchedule(true);
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        setSchedulingSuggestion("Gemini API key is not configured.");
+        setIsGeneratingSchedule(false);
+        return;
+      }
+
+      const ai = new GoogleGenAI({ apiKey: apiKey });
+      const prompt = `As an expert event planner, what is the statistically best day of the week and time of day to host a ${newEvent.category} event to maximize attendance? Please provide a 1-2 sentence compelling suggestion. Be concise.`;
+      
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash", 
+        contents: prompt,
+      });
+
+      if (response.text) {
+        setSchedulingSuggestion(response.text);
+      }
+    } catch (error) {
+      console.error("Error generating scheduling advice:", error);
+      setSchedulingSuggestion("Failed to generate scheduling advice. Please try again.");
+    } finally {
+      setIsGeneratingSchedule(false);
+    }
+  };
+
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData();
@@ -128,6 +210,7 @@ const OrganizerDashboard: React.FC = () => {
       });
       setNewImages([]);
       setImageInputs([0]);
+      setSchedulingSuggestion('');
     } catch (error) {
       console.error('Error creating event:', error);
     }
@@ -485,8 +568,56 @@ const OrganizerDashboard: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* AI Scheduling Assistant */}
+                  <div className="sm:col-span-2 mt-2 mb-4">
+                    {schedulingSuggestion ? (
+                      <div className="flex items-start px-4 py-3 space-x-3 text-sm text-indigo-800 bg-indigo-50 border border-indigo-200 rounded-lg animate-fade-in">
+                        <span className="text-xl">💡</span>
+                        <div className="flex-1">
+                           <p className="font-semibold mb-1">AI Scheduling Tip:</p>
+                           <p>{schedulingSuggestion}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={generateSchedulingAdvice}
+                        disabled={isGeneratingSchedule || !newEvent.category}
+                        className={`flex items-center text-sm font-medium transition-colors ${
+                          !newEvent.category 
+                            ? 'text-gray-400 cursor-not-allowed' 
+                            : 'text-indigo-600 hover:text-indigo-800'
+                        }`}
+                      >
+                        {isGeneratingSchedule ? (
+                          <span className="flex items-center animate-pulse">
+                            <Clock className="w-4 h-4 mr-1" /> Analyzing best times...
+                          </span>
+                        ) : (
+                          <span className="flex items-center">
+                            <Clock className="w-4 h-4 mr-1" /> ✨ Get Scheduling Advice for this Category
+                          </span>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
                   <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-700">Description</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm font-medium text-gray-700">Description</label>
+                      <button
+                        type="button"
+                        onClick={generateDescription}
+                        disabled={isGeneratingDesc}
+                        className="flex items-center space-x-1 text-sm font-medium text-purple-600 transition-colors hover:text-purple-800 disabled:opacity-50"
+                      >
+                        {isGeneratingDesc ? (
+                          <span className="animate-pulse">✨ Generating...</span>
+                        ) : (
+                          <span>✨ Generate with AI</span>
+                        )}
+                      </button>
+                    </div>
                     <textarea
                       value={newEvent.description}
                       onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}

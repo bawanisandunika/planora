@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Calendar, MapPin, Users, ArrowRight, Star, Clock, Music, Cpu, Utensils, Palette } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface Event {
   id: number;
@@ -153,7 +153,13 @@ const Home: React.FC = () => {
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
-            <div className="p-6 text-center transition-shadow rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 hover:shadow-lg">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="p-6 text-center transition-shadow rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 hover:shadow-lg"
+            >
               <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-gray-800 rounded-full">
                 <Calendar className="w-8 h-8 text-white" />
               </div>
@@ -161,9 +167,15 @@ const Home: React.FC = () => {
               <p className="text-gray-600">
                 Find events that match your interests with our intuitive search and filtering system.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="p-6 text-center transition-shadow rounded-xl bg-gradient-to-br from-gray-100 to-stone-200 hover:shadow-lg">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="p-6 text-center transition-shadow rounded-xl bg-gradient-to-br from-gray-100 to-stone-200 hover:shadow-lg"
+            >
               <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-stone-700">
                 <Users className="w-8 h-8 text-white" />
               </div>
@@ -171,9 +183,15 @@ const Home: React.FC = () => {
               <p className="text-gray-600">
                 Register for events with just a few clicks and manage all your bookings in one place.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="p-6 text-center transition-shadow rounded-xl bg-gradient-to-br from-gray-100 to-zinc-200 hover:shadow-lg">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="p-6 text-center transition-shadow rounded-xl bg-gradient-to-br from-gray-100 to-zinc-200 hover:shadow-lg"
+            >
               <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800">
                 <Star className="w-8 h-8 text-white" />
               </div>
@@ -181,7 +199,7 @@ const Home: React.FC = () => {
               <p className="text-gray-600">
                 All events are curated and verified to ensure you have the best possible experience.
               </p>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -200,9 +218,14 @@ const Home: React.FC = () => {
             </div>
           ) : (
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {featuredEvents.map((event) => (
-                <div
+              {featuredEvents.map((event, index) => (
+                <motion.div
                   key={event.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  whileHover={{ y: -5 }}
                   className="overflow-hidden transition-all duration-300 bg-white shadow-md rounded-xl hover:shadow-xl group"
                 >
                   <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
@@ -243,14 +266,14 @@ const Home: React.FC = () => {
                       </div>
                       <Link
                         to={`/events/${event.id}`}
-                        className="flex items-center text-sm fontΜ-semibold text-blue-600 transition-colors hover:text-blue-700"
+                        className="flex items-center text-sm font-semibold text-blue-600 transition-colors hover:text-blue-700"
                       >
                         View Details
                         <ArrowRight className="w-4 h-4 ml-1" />
                       </Link>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
@@ -302,7 +325,13 @@ const Home: React.FC = () => {
             </p>
           </div>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <div className="p-6 transition-shadow shadow-md bg-gray-50 rounded-xl hover:shadow-lg">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="p-6 transition-shadow shadow-md bg-gray-50 rounded-xl hover:shadow-lg"
+            >
               <div className="flex items-center mb-4">
                 <Star className="w-5 h-5 text-yellow-400" />
                 <Star className="w-5 h-5 text-yellow-400" />
@@ -322,8 +351,14 @@ const Home: React.FC = () => {
                   <p className="text-sm text-gray-500">Music Lover</p>
                 </div>
               </div>
-            </div>
-            <div className="p-6 transition-shadow shadow-md bg-gray-50 rounded-xl hover:shadow-lg">
+            </motion.div>
+            <motion.div 
+               initial={{ scale: 0.9, opacity: 0 }}
+               whileInView={{ scale: 1, opacity: 1 }}
+               viewport={{ once: true }}
+               transition={{ duration: 0.5, delay: 0.2 }}
+               className="p-6 transition-shadow shadow-md bg-gray-50 rounded-xl hover:shadow-lg"
+            >
               <div className="flex items-center mb-4">
                 <Star className="w-5 h-5 text-yellow-400" />
                 <Star className="w-5 h-5 text-yellow-400" />
@@ -343,8 +378,14 @@ const Home: React.FC = () => {
                   <p className="text-sm text-gray-500">Event Goer from Galle</p>
                 </div>
               </div>
-            </div>
-            <div className="p-6 transition-shadow shadow-md bg-gray-50 rounded-xl hover:shadow-lg">
+            </motion.div>
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="p-6 transition-shadow shadow-md bg-gray-50 rounded-xl hover:shadow-lg"
+            >
               <div className="flex items-center mb-4">
                 <Star className="w-5 h-5 text-yellow-400" />
                 <Star className="w-5 h-5 text-yellow-400" />
@@ -364,7 +405,7 @@ const Home: React.FC = () => {
                   <p className="text-sm text-gray-500">Tech Event Organizer</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -405,46 +446,78 @@ const Home: React.FC = () => {
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <Link
-              to="/events?category=music"
-              className="p-6 transition-all duration-300 bg-white shadow-md rounded-xl hover:shadow-xl hover:scale-105"
+            <motion.div
+               whileHover={{ y: -5 }}
+               initial={{ opacity: 0, scale: 0.9 }}
+               whileInView={{ opacity: 1, scale: 1 }}
+               viewport={{ once: true }}
+               transition={{ duration: 0.4 }}
             >
-              <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
-                <Music className="w-16 h-16 text-gray-700" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Music & Concerts</h3>
-              <p className="text-gray-600">From rock to jazz, find live performances that move you.</p>
-            </Link>
-            <Link
-              to="/events?category=tech"
-              className="p-6 transition-all duration-300 bg-white shadow-md rounded-xl hover:shadow-xl hover:scale-105"
+              <Link
+                to="/events?category=music"
+                className="block p-6 transition-all duration-300 bg-[#FDF8F5] shadow-md rounded-xl hover:shadow-xl"
+              >
+                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
+                  <Music className="w-16 h-16 text-gray-700" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Music & Concerts</h3>
+                <p className="text-gray-600">From rock to jazz, find live performances that move you.</p>
+              </Link>
+            </motion.div>
+            <motion.div
+               whileHover={{ y: -5 }}
+               initial={{ opacity: 0, scale: 0.9 }}
+               whileInView={{ opacity: 1, scale: 1 }}
+               viewport={{ once: true }}
+               transition={{ duration: 0.4, delay: 0.1 }}
             >
-              <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
-                <Cpu className="w-16 h-16 text-gray-700" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Tech & Innovation</h3>
-              <p className="text-gray-600">Explore conferences and workshops on cutting-edge technology.</p>
-            </Link>
-            <Link
-              to="/events?category=food"
-              className="p-6 transition-all duration-300 bg-white shadow-md rounded-xl hover:shadow-xl hover:scale-105"
+              <Link
+                to="/events?category=tech"
+                className="block p-6 transition-all duration-300 bg-[#F5EBE0] shadow-md rounded-xl hover:shadow-xl"
+              >
+                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
+                  <Cpu className="w-16 h-16 text-gray-700" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Tech & Innovation</h3>
+                <p className="text-gray-600">Explore conferences and workshops on cutting-edge technology.</p>
+              </Link>
+            </motion.div>
+            <motion.div
+               whileHover={{ y: -5 }}
+               initial={{ opacity: 0, scale: 0.9 }}
+               whileInView={{ opacity: 1, scale: 1 }}
+               viewport={{ once: true }}
+               transition={{ duration: 0.4, delay: 0.2 }}
             >
-              <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
-                <Utensils className="w-16 h-16 text-gray-700" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Food & Drink</h3>
-              <p className="text-gray-600">Savor culinary events, tastings, and cooking classes.</p>
-            </Link>
-            <Link
-              to="/events?category=art"
-              className="p-6 transition-all duration-300 bg-white shadow-md rounded-xl hover:shadow-xl hover:scale-105"
+              <Link
+                to="/events?category=food"
+                className="block p-6 transition-all duration-300 bg-[#E3D5CA] shadow-md rounded-xl hover:shadow-xl"
+              >
+                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
+                  <Utensils className="w-16 h-16 text-gray-700" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Food & Drink</h3>
+                <p className="text-gray-600">Savor culinary events, tastings, and cooking classes.</p>
+              </Link>
+            </motion.div>
+            <motion.div
+               whileHover={{ y: -5 }}
+               initial={{ opacity: 0, scale: 0.9 }}
+               whileInView={{ opacity: 1, scale: 1 }}
+               viewport={{ once: true }}
+               transition={{ duration: 0.4, delay: 0.3 }}
             >
-              <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
-                <Palette className="w-16 h-16 text-gray-700" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900">Art & Culture</h3>
-              <p className="text-gray-600">Immerse yourself in gallery openings and cultural festivals.</p>
-            </Link>
+              <Link
+                to="/events?category=art"
+                className="block p-6 transition-all duration-300 bg-[#D5BDAF] shadow-md rounded-xl hover:shadow-xl"
+              >
+                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
+                  <Palette className="w-16 h-16 text-gray-700" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">Art & Culture</h3>
+                <p className="text-gray-600">Immerse yourself in gallery openings and cultural festivals.</p>
+              </Link>
+            </motion.div>
           </div>
         </div>
       </section>

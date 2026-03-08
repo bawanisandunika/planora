@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { GoogleGenAI } from '@google/genai';
 
 const PredictCategory: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,8 @@ const PredictCategory: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { email } = location.state || {};
+  const [suggestion, setSuggestion] = useState('');
+  const [generatingSuggestion, setGeneratingSuggestion] = useState(false);
 
   useEffect(() => {
     if (!email) {
@@ -80,7 +83,33 @@ const PredictCategory: React.FC = () => {
       );
 
       setResult(`Your favorite category is: ${predictedCategory}`);
-      setTimeout(() => navigate('/'), 4000);
+
+      // Generate AI suggestion
+      setGeneratingSuggestion(true);
+      try {
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        if (apiKey) {
+          const ai = new GoogleGenAI({ apiKey: apiKey });
+          const prompt = `The user's favorite event category is ${predictedCategory}. Suggest one other complementary event category they might enjoy (e.g., if Tech, suggest Music for relaxation; if Sports, suggest Art for creativity). Provide a single, friendly sentence explaining why it's a good complement for them. Be brief.`;
+          
+          const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+          });
+          
+          if (response.text) {
+            setSuggestion(response.text);
+          }
+        } else {
+             console.warn("Gemini API key not found. Skipping AI suggestion.");
+        }
+      } catch (aiError) {
+        console.error("Failed to generate AI suggestion:", aiError);
+      } finally {
+        setGeneratingSuggestion(false);
+      }
+
+      setTimeout(() => navigate('/'), 8000);
     } catch (err: any) {
       console.error('Error:', err);
       if (err.message === 'Network Error') {
@@ -360,14 +389,34 @@ const PredictCategory: React.FC = () => {
         )}
 
         {result && (
-            <div className="flex items-center max-w-xl px-6 py-4 mx-auto mt-6 space-x-3 text-green-800 bg-white border border-green-300 shadow-md rounded-xl animate-fade-in">
-            <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            <span className="text-sm font-medium">{result}</span>
+          <div className="flex flex-col max-w-xl mx-auto mt-6 space-y-4 animate-fade-in">
+            <div className="flex items-center px-6 py-4 space-x-3 text-green-800 bg-white border border-green-300 shadow-md rounded-xl">
+              <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm font-medium">{result}</span>
             </div>
-
-
+            
+            {(generatingSuggestion || suggestion) && (
+              <div className="flex items-start px-6 py-4 space-x-3 text-purple-800 bg-white border border-purple-300 shadow-md rounded-xl">
+                <span className="text-xl">✨</span>
+                <div className="flex-1 text-sm font-medium">
+                  {generatingSuggestion ? (
+                     <span className="animate-pulse">Finding complementary events...</span>
+                  ) : (
+                    <span>{suggestion}</span>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            <button
+               onClick={() => navigate('/')}
+               className="px-6 py-2 mx-auto text-sm font-medium text-blue-600 transition-colors bg-blue-100 rounded-lg hover:bg-blue-200"
+            >
+               Go to Dashboard Now
+            </button>
+          </div>
         )}
 
         {loading && (

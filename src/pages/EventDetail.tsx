@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Calendar, MapPin, Users, Clock, User, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, User, ArrowLeft, CheckCircle, MessageCircle, X, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { GoogleGenAI } from '@google/genai';
 
 interface Event {
   id: number;
@@ -29,6 +30,12 @@ const EventDetail: React.FC = () => {
   const [registering, setRegistering] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Chatbot State
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'model', content: string }[]>([]);
+  const [currentInput, setCurrentInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -85,6 +92,55 @@ const EventDetail: React.FC = () => {
 
   const handleImageSelect = (index: number) => {
     setCurrentImageIndex(index);
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentInput.trim() || !event) return;
+
+    const userMessage = currentInput.trim();
+    setChatMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    setCurrentInput('');
+    setIsChatLoading(true);
+
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        setChatMessages((prev) => [...prev, { role: 'model', content: "API key is not configured." }]);
+        setIsChatLoading(false);
+        return;
+      }
+
+      const ai = new GoogleGenAI({ apiKey: apiKey });
+      
+      const prompt = `You are a helpful AI assistant answering questions specifically about the following event:
+Title: ${event.title}
+Category: ${event.category}
+Date: ${new Date(event.date).toLocaleDateString()}
+Time: ${event.time}
+Location: ${event.location}
+Capacity: ${event.capacity}
+Registrations: ${event.registrations_count}
+Organizer: ${event.organizer_name}
+Description: ${event.description}
+
+A user is asking: "${userMessage}"
+Please answer their question briefly and friendly, based ONLY on the event information provided above. If you don't know the answer from the context, say so gracefully.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        setChatMessages((prev) => [...prev, { role: 'model', content: response.text || "" }]);
+      }
+    } catch (error) {
+        console.error("Error generating chat response:", error);
+        setChatMessages((prev) => [...prev, { role: 'model', content: "Sorry, I am having trouble answering right now. Please try again later." }]);
+    } finally {
+        setIsChatLoading(false);
+    }
   };
 
   if (loading) {
@@ -423,6 +479,89 @@ const EventDetail: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* AI Chatbot Widget */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <AnimatePresence>
+          {isChatOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="absolute bottom-20 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col"
+              style={{ height: '400px' }}
+            >
+              {/* Chat Header */}
+              <div className="bg-gray-900 text-white px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <MessageCircle className="w-5 h-5" />
+                  <span className="font-semibold">Chat with Event AI</span>
+                </div>
+                <button onClick={() => setIsChatOpen(false)} className="text-gray-300 hover:text-white transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Chat Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 flex flex-col">
+                {chatMessages.length === 0 && (
+                  <p className="text-gray-500 text-sm text-center mt-4">
+                    Hi! I'm your AI assistant for this event. Ask me anything about this event!
+                  </p>
+                )}
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] px-4 py-2 text-sm ${
+                      msg.role === 'user' 
+                        ? 'bg-blue-600 text-white rounded-2xl rounded-tr-sm' 
+                        : 'bg-white border border-gray-200 text-gray-800 rounded-2xl rounded-tl-sm shadow-sm'
+                    }`}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white border border-gray-200 text-gray-800 rounded-2xl rounded-tl-sm shadow-sm px-4 py-2 text-sm">
+                      <span className="animate-pulse">Typing...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Chat Input */}
+              <div className="border-t border-gray-200 p-3 bg-white">
+                <form onSubmit={handleSendMessage} className="flex space-x-2">
+                  <input
+                    type="text"
+                    value={currentInput}
+                    onChange={(e) => setCurrentInput(e.target.value)}
+                    placeholder="Ask a question..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!currentInput.trim() || isChatLoading}
+                    className="bg-blue-600 text-white p-2 text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.button
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="bg-gray-900 text-white p-4 rounded-full shadow-xl hover:bg-gray-800 transition-colors shadow-black/20"
+        >
+          {isChatOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+        </motion.button>
+      </div>
+
     </motion.div>
   );
 };
