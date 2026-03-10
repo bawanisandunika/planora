@@ -9,8 +9,8 @@ const router = express.Router();
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'abc@gmail.com', // Provided Gmail address
-    pass: 'password123', // Provided app password
+    user: 'projects0802@gmail.com',
+    pass: 'dgom stcn mcwx bjsx', 
   },
 });
 
@@ -64,7 +64,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     // Prepare email content with modern CSS design
     const mailOptions = {
-      from: '"Planora Team" <fueltrixteam@gmail.com>',
+      from: '"Planora Team" <projects0802@gmail.com>',
       to: user[0].email,
       subject: `Registration Confirmation for ${event[0].title}`,
       html: `
@@ -201,8 +201,8 @@ router.post('/send-email', async (req, res) => {
 
   // Email options
   const mailOptions = {
-    from: '"Planora Support" <fueltrixteam@gmail.com>', // Display name with authenticated Gmail
-    to: to, // Admin email: thisara.a2001@gmail.com
+    from: '"Planora Support" <projects0802@gmail.com>',
+    to: to, 
     subject: `New Contact Form Submission: ${subject}`,
     text: `
       Name: ${name}

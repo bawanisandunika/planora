@@ -64,15 +64,26 @@ const Home: React.FC = () => {
         ></motion.div>
         <div className="relative z-20 w-full mx-auto max-w-7xl">
           <div className="max-w-2xl px-4 py-10 text-center sm:px-6 sm:py-12 md:py-16 md:text-left lg:py-20">
-            <motion.h1
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-              className="mb-4 text-3xl font-bold leading-tight sm:text-4xl md:text-5xl"
-              style={{ fontFamily: 'Montserrat, sans-serif' }}
+            <div 
+              className="flex justify-center md:justify-start mb-4 text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl md:text-6xl drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] overflow-hidden py-2" 
+              style={{ fontFamily: "'Jost', sans-serif" }}
             >
-              Planora
-            </motion.h1>
+              {"Planora".split('').map((char, index) => (
+                <motion.span
+                  key={index}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.6,
+                    ease: [0.22, 1, 0.36, 1],
+                    delay: index * 0.1
+                  }}
+                  className="inline-block"
+                >
+                  {char}
+                </motion.span>
+              ))}
+            </div>
             <motion.p
               initial={{ opacity: 0, y: 30, rotateX: -10 }}
               animate={{ opacity: 1, y: 0, rotateX: 0 }}
