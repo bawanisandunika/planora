@@ -1,20 +1,43 @@
-// src/components/PredictCategory.tsx
+// src/pages/PredictCategory.tsx
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleGenAI } from '@google/genai';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  User, 
+  Heart, 
+  Sparkles, 
+  ChevronRight, 
+  ChevronLeft, 
+  CheckCircle2, 
+  Activity, 
+  MonitorPlay, 
+  Music, 
+  Briefcase, 
+  GraduationCap, 
+  Utensils, 
+  Dumbbell,
+  Loader2
+} from 'lucide-react';
+
+const steps = [
+  { id: 1, title: 'Basic Info', icon: User },
+  { id: 2, title: 'Interests', icon: Heart },
+  { id: 3, title: 'Preferences', icon: Sparkles },
+];
 
 const PredictCategory: React.FC = () => {
   const [formData, setFormData] = useState({
     age: 18,
     gender: 'Male',
-    tech_spend: 1,
-    music_freq: 1,
-    sports_hours: 1,
-    business_interest: 1,
-    edu_freq: 1,
-    food_interest: 1,
-    health_priority: 1,
+    tech_spend: 3,
+    music_freq: 3,
+    sports_hours: 3,
+    business_interest: 3,
+    edu_freq: 3,
+    food_interest: 3,
+    health_priority: 3,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,41 +56,38 @@ const PredictCategory: React.FC = () => {
     }
   }, [email, navigate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleChange = (name: string, value: string | number) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError('');
     setResult('');
     setProgress(0);
 
-    // Animate progress bar
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
-        if (prev < 100) return prev + 10;
-        clearInterval(progressInterval);
-        return 100;
+        if (prev < 90) return prev + 10;
+        return prev;
       });
-    }, 150);
+    }, 200);
 
     try {
       const predictionResponse = await axios.post('http://localhost:5001/predict', formData, {
         headers: { 'Content-Type': 'application/json' },
       });
-      console.log('Prediction Response:', predictionResponse.data);
       const predictedCategory = predictionResponse.data.prediction;
 
-      // Update user preference in Express backend
       const token = localStorage.getItem('token');
       if (!token) {
         setError('Authentication token missing. Please log in again.');
         setLoading(false);
+        clearInterval(progressInterval);
         return;
       }
 
@@ -82,9 +102,10 @@ const PredictCategory: React.FC = () => {
         }
       );
 
-      setResult(`Your favorite category is: ${predictedCategory}`);
+      setProgress(100);
+      clearInterval(progressInterval);
+      setResult(`Your vibe is: ${predictedCategory}`);
 
-      // Generate AI suggestion
       setGeneratingSuggestion(true);
       try {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -112,6 +133,7 @@ const PredictCategory: React.FC = () => {
       setTimeout(() => navigate('/'), 8000);
     } catch (err: any) {
       console.error('Error:', err);
+      clearInterval(progressInterval);
       if (err.message === 'Network Error') {
         setError('Unable to connect to the server. Please check if the server is running.');
       } else {
@@ -123,316 +145,311 @@ const PredictCategory: React.FC = () => {
   };
 
   const nextStep = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    }
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
+    else handleSubmit();
   };
 
   const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const renderStep = () => {
+  const RatingSelect = ({ name, label, icon: Icon, value }: { name: string, label: string, icon: any, value: number }) => (
+    <div className="p-5 transition-all duration-300 border shadow-sm bg-white/50 backdrop-blur-md rounded-2xl border-white/40 hover:shadow-md">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 text-[#8C5A3C] rounded-lg bg-[#FFF8F0]">
+          <Icon size={20} />
+        </div>
+        <label className="text-sm font-semibold text-gray-700">{label}</label>
+      </div>
+      <div className="flex justify-between gap-2">
+        {[1, 2, 3, 4, 5].map((num) => (
+          <button
+            key={num}
+            type="button"
+            onClick={() => handleChange(name, num)}
+            className={`flex-1 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+              value === num 
+                ? 'bg-[#8C5A3C] text-white shadow-lg shadow-[#8C5A3C]/30 scale-105' 
+                : 'bg-gray-100 text-gray-600 hover:bg-[#FFF8F0] hover:text-[#8C5A3C] hover:scale-105'
+            }`}
+          >
+            {num}
+          </button>
+        ))}
+      </div>
+      <div className="flex justify-between mt-2 text-xs text-gray-400">
+        <span>Low</span>
+        <span>High</span>
+      </div>
+    </div>
+  );
+
+  const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-gray-800">Basic Information</h3>
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Age</label>
-              <div className="flex items-center gap-4">
+          <motion.div
+            key="step1"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-6"
+          >
+            <div className="p-6 transition-all border shadow-sm bg-white/50 backdrop-blur-md rounded-2xl border-white/40 hover:shadow-md">
+              <label className="block mb-4 text-sm font-semibold text-gray-700">How old are you?</label>
+              <div className="flex items-center gap-6">
                 <input
                   type="range"
-                  name="age"
-                  min="18"
+                  min="16"
                   max="100"
                   value={formData.age}
-                  onChange={handleChange}
-                  required
-                  className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
+                  onChange={(e) => handleChange('age', parseInt(e.target.value))}
+                  className="flex-1 h-3 rounded-lg appearance-none bg-gradient-to-r from-[#C08552]/40 to-[#8C5A3C]/40 accent-[#8C5A3C] cursor-grab active:cursor-grabbing"
                 />
-                <span className="w-12 px-2 py-1 text-center rounded-md bg-blue-50">{formData.age}</span>
+                <motion.div 
+                  key={formData.age}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="flex items-center justify-center w-16 h-16 text-2xl font-bold text-[#4B2E2B] shadow-inner bg-[#FFF8F0] rounded-2xl"
+                >
+                  {formData.age}
+                </motion.div>
               </div>
             </div>
 
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Gender</label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-                <option value="Prefer not to say">Prefer not to say</option>
-              </select>
+            <div className="p-6 transition-all border shadow-sm bg-white/50 backdrop-blur-md rounded-2xl border-white/40 hover:shadow-md">
+              <label className="block mb-4 text-sm font-semibold text-gray-700">How do you identify?</label>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {['Male', 'Female', 'Other', 'Prefer not to say'].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => handleChange('gender', option)}
+                    className={`py-3 px-2 text-sm font-medium rounded-xl transition-all duration-200 ${
+                      formData.gender === option 
+                        ? 'bg-[#8C5A3C] text-white shadow-lg shadow-[#8C5A3C]/30 ring-2 ring-[#8C5A3C] ring-offset-2' 
+                        : 'bg-gray-100 text-gray-600 hover:bg-[#FFF8F0] hover:text-[#8C5A3C]'
+                    }`}
+                  >
+                    {option === 'Prefer not to say' ? 'Skip' : option}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          </motion.div>
         );
       case 2:
         return (
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-gray-800">Hobbies & Interests</h3>
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Tech Spending (1=Never, 5=Very Often)</label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  name="tech_spend"
-                  min="1"
-                  max="5"
-                  value={formData.tech_spend}
-                  onChange={handleChange}
-                  required
-                  className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
-                />
-                <span className="w-12 px-2 py-1 text-center rounded-md bg-blue-50">{formData.tech_spend}</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Music Frequency (1=Rarely, 5=Daily)</label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  name="music_freq"
-                  min="1"
-                  max="5"
-                  value={formData.music_freq}
-                  onChange={handleChange}
-                  required
-                  className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
-                />
-                <span className="w-12 px-2 py-1 text-center rounded-md bg-blue-50">{formData.music_freq}</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Sports Hours (1=None, 5=10+ hours)</label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  name="sports_hours"
-                  min="1"
-                  max="5"
-                  value={formData.sports_hours}
-                  onChange={handleChange}
-                  required
-                  className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
-                />
-                <span className="w-12 px-2 py-1 text-center rounded-md bg-blue-50">{formData.sports_hours}</span>
-              </div>
-            </div>
-          </div>
+          <motion.div
+            key="step2"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-4"
+          >
+            <RatingSelect name="tech_spend" label="Tech Spending Frequency" icon={MonitorPlay} value={formData.tech_spend} />
+            <RatingSelect name="music_freq" label="Music Event Attendance" icon={Music} value={formData.music_freq} />
+            <RatingSelect name="sports_hours" label="Active Sports Hours" icon={Dumbbell} value={formData.sports_hours} />
+          </motion.div>
         );
       case 3:
         return (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <h3 className="text-xl font-semibold text-gray-800">Preferences</h3>
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Business Interest (1=Not at all, 5=Very Interested)</label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  name="business_interest"
-                  min="1"
-                  max="5"
-                  value={formData.business_interest}
-                  onChange={handleChange}
-                  required
-                  className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
-                />
-                <span className="w-12 px-2 py-1 text-center rounded-md bg-blue-50">{formData.business_interest}</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Education Frequency (1=Never, 5=Regularly)</label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  name="edu_freq"
-                  min="1"
-                  max="5"
-                  value={formData.edu_freq}
-                  onChange={handleChange}
-                  required
-                  className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
-                />
-                <span className="w-12 px-2 py-1 text-center rounded-md bg-blue-50">{formData.edu_freq}</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Food Interest (1=No interest, 5=Love it)</label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  name="food_interest"
-                  min="1"
-                  max="5"
-                  value={formData.food_interest}
-                  onChange={handleChange}
-                  required
-                  className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
-                />
-                <span className="w-12 px-2 py-1 text-center rounded-md bg-blue-50">{formData.food_interest}</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Health Priority (1=Low, 5=Top priority)</label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  name="health_priority"
-                  min="1"
-                  max="5"
-                  value={formData.health_priority}
-                  onChange={handleChange}
-                  required
-                  className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer"
-                />
-                <span className="w-12 px-2 py-1 text-center rounded-md bg-blue-50">{formData.health_priority}</span>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full px-6 py-3 mt-6 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="w-5 h-5 mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Predicting...
-                </span>
-              ) : (
-                'Submit'
-              )}
-            </button>
-          </form>
+          <motion.div
+            key="step3"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-4"
+          >
+            <RatingSelect name="business_interest" label="Interest in Business Events" icon={Briefcase} value={formData.business_interest} />
+            <RatingSelect name="edu_freq" label="Educational Workshops" icon={GraduationCap} value={formData.edu_freq} />
+            <RatingSelect name="food_interest" label="Culinary Expressions" icon={Utensils} value={formData.food_interest} />
+            <RatingSelect name="health_priority" label="Health & Wellness Priority" icon={Activity} value={formData.health_priority} />
+          </motion.div>
         );
       default:
         return null;
     }
   };
 
-  return (
-    <div className="flex items-center justify-center min-h-screen px-4 py-12 bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="w-full max-w-2xl p-8 bg-white shadow-lg rounded-xl">
-        {/* Top Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between mb-2">
-            {[1, 2, 3].map((step) => (
-              <div
-                key={step}
-                className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                  currentStep >= step ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-                }`}
+  if (result) {
+    return (
+      <div className="flex items-center justify-center min-h-screen px-4 py-12 bg-gradient-to-br from-[#FFF8F0] via-white to-[#FFF8F0]">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-lg p-8 text-center bg-white/80 backdrop-blur-xl shadow-2xl border border-white/40 rounded-3xl"
+        >
+          <motion.div 
+             initial={{ scale: 0 }}
+             animate={{ scale: 1 }}
+             transition={{ type: "spring", bounce: 0.5, delay: 0.2 }}
+             className="inline-flex items-center justify-center w-24 h-24 mb-6 text-green-500 rounded-full shadow-lg bg-green-50"
+          >
+            <CheckCircle2 size={48} />
+          </motion.div>
+          <h2 className="mb-2 text-3xl font-bold text-gray-800">All Set!</h2>
+          <div className="p-4 mb-6 border bg-gradient-to-r from-[#C08552] to-[#8C5A3C] rounded-2xl border-white/20">
+             <p className="text-xl font-medium text-white">{result}</p>
+          </div>
+
+          <AnimatePresence>
+            {(generatingSuggestion || suggestion) && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-5 mb-8 text-left border shadow-md bg-[#FFF8F0]/80 rounded-2xl border-[#C08552]/20"
               >
-                {step}
-              </div>
-            ))}
-          </div>
-          <div className="w-full h-2 bg-gray-200 rounded-full">
-            <div
-              className="h-2 transition-all duration-500 ease-in-out bg-blue-600 rounded-full"
-              style={{ width: `${(currentStep / 3) * 100}%` }}
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl animate-pulse">✨</span>
+                  <div className="flex-1 text-sm font-medium text-[#4B2E2B] leading-relaxed">
+                    {generatingSuggestion ? (
+                        <span className="flex items-center gap-2 text-[#8C5A3C]">
+                          <Loader2 size={16} className="animate-spin" />
+                          Finding complementary events...
+                        </span>
+                    ) : (
+                      suggestion
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <button
+             onClick={() => navigate('/')}
+             className="inline-flex items-center justify-center w-full px-6 py-4 text-sm font-bold tracking-wide text-white uppercase transition-all shadow-lg rounded-xl bg-[#4B2E2B] hover:bg-[#8C5A3C] hover:shadow-xl hover:-translate-y-0.5"
+          >
+             Go to Dashboard
+             <ChevronRight className="w-4 h-4 ml-2" />
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-center min-h-screen px-4 py-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#FFF8F0] via-white to-[#FFF8F0] font-sans">
+      <div className="w-full max-w-2xl">
+        <div className="mb-8 text-center">
+          <motion.h2 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#8C5A3C] to-[#C08552]"
+          >
+            Personalize Your Experience
+          </motion.h2>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="mt-3 text-[#4B2E2B]"
+          >
+            Help us understand what excites you the most.
+          </motion.p>
+        </div>
+
+        <div className="p-8 shadow-2xl bg-white/70 backdrop-blur-2xl border border-white/60 rounded-[2rem]">
+          {/* Progress Steps */}
+          <div className="relative mb-12">
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -translate-y-1/2 rounded-full z-0"></div>
+            <div 
+              className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-[#C08552] to-[#8C5A3C] -translate-y-1/2 rounded-full z-0 transition-all duration-500"
+              style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
             ></div>
+            
+            <div className="relative z-10 flex justify-between">
+              {steps.map((step) => {
+                const StepIcon = step.icon;
+                const isActive = currentStep >= step.id;
+                const isCurrent = currentStep === step.id;
+                
+                return (
+                  <div key={step.id} className="flex flex-col items-center gap-2">
+                    <motion.div 
+                      className={`flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ${
+                        isActive 
+                          ? 'bg-[#8C5A3C] text-white shadow-lg shadow-[#8C5A3C]/40' 
+                          : 'bg-white text-gray-400 border border-gray-200'
+                      } ${isCurrent ? 'scale-110 ring-4 ring-[#FFF8F0]' : ''}`}
+                    >
+                      <StepIcon size={20} className={isCurrent ? 'animate-pulse' : ''} />
+                    </motion.div>
+                    <span className={`text-xs font-semibold ${isActive ? 'text-[#8C5A3C]' : 'text-gray-400'}`}>
+                      {step.title}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        <h2 className="text-3xl font-bold text-center text-gray-800">Tell Us About Yourself</h2>
-        <p className="mt-2 text-center text-gray-600">Help us find events you'll love</p>
+          {error && (
+             <motion.div 
+               initial={{ opacity: 0, y: -10 }}
+               animate={{ opacity: 1, y: 0 }}
+               className="p-4 mb-6 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl"
+             >
+               {error}
+             </motion.div>
+          )}
 
-        {error && (
-          <div className="px-4 py-3 mt-4 text-red-700 bg-red-100 border border-red-400 rounded-lg">
-            {error}
+          {/* Form Content */}
+          <div className="min-h-[300px]">
+            <AnimatePresence mode="wait">
+              {renderStepContent()}
+            </AnimatePresence>
           </div>
-        )}
 
-        <div className="mt-8">
-          {renderStep()}
-        </div>
-
-        {currentStep < 3 && (
-          <div className="flex justify-between pt-6">
+          {/* Navigation */}
+          <div className="flex items-center justify-between pt-8 mt-8 border-t border-gray-100">
             <button
               type="button"
               onClick={prevStep}
-              disabled={currentStep === 1}
-              className={`px-6 py-3 font-medium rounded-lg transition-colors ${
+              className={`flex items-center px-6 py-3 text-sm font-semibold rounded-xl transition-all ${
                 currentStep === 1 
-                  ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
-                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                  ? 'opacity-0 pointer-events-none' 
+                  : 'text-gray-600 bg-gray-100 hover:bg-[#FFF8F0] hover:text-[#8C5A3C]'
               }`}
             >
-              Back
+              <ChevronLeft className="w-4 h-4 mr-1" /> Back
             </button>
+            
             <button
               type="button"
               onClick={nextStep}
-              className="px-6 py-3 font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
+              disabled={loading}
+              className="flex items-center px-8 py-3 text-sm font-bold text-white transition-all shadow-xl bg-gradient-to-r from-[#C08552] to-[#8C5A3C] rounded-xl hover:shadow-[#8C5A3C]/30 hover:scale-[1.02] disabled:opacity-50 disabled:pointer-events-none"
             >
-              Next
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Analyzing...
+                </>
+              ) : currentStep === 3 ? (
+                <>Submit <CheckCircle2 className="w-4 h-4 ml-2" /></>
+              ) : (
+                <>Next <ChevronRight className="w-4 h-4 ml-2" /></>
+              )}
             </button>
           </div>
-        )}
-
-        {result && (
-          <div className="flex flex-col max-w-xl mx-auto mt-6 space-y-4 animate-fade-in">
-            <div className="flex items-center px-6 py-4 space-x-3 text-green-800 bg-white border border-green-300 shadow-md rounded-xl">
-              <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-sm font-medium">{result}</span>
+          
+          {loading && (
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-[2rem]">
+               <div className="w-48 h-2 mb-4 bg-gray-200 rounded-full overflow-hidden">
+                 <motion.div 
+                   className="h-full bg-[#8C5A3C]"
+                   initial={{ width: 0 }}
+                   animate={{ width: `${progress}%` }}
+                 />
+               </div>
+               <p className="font-medium text-[#8C5A3C] animate-pulse">Analyzing your vibe...</p>
             </div>
-            
-            {(generatingSuggestion || suggestion) && (
-              <div className="flex items-start px-6 py-4 space-x-3 text-purple-800 bg-white border border-purple-300 shadow-md rounded-xl">
-                <span className="text-xl">✨</span>
-                <div className="flex-1 text-sm font-medium">
-                  {generatingSuggestion ? (
-                     <span className="animate-pulse">Finding complementary events...</span>
-                  ) : (
-                    <span>{suggestion}</span>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            <button
-               onClick={() => navigate('/')}
-               className="px-6 py-2 mx-auto text-sm font-medium text-blue-600 transition-colors bg-blue-100 rounded-lg hover:bg-blue-200"
-            >
-               Go to Dashboard Now
-            </button>
-          </div>
-        )}
-
-        {loading && (
-          <div className="mt-6">
-            <div className="w-full h-2 bg-gray-200 rounded-full">
-              <div
-                className="h-2 transition-all duration-300 bg-blue-600 rounded-full"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-            <p className="mt-2 text-sm text-center text-gray-600">Analyzing your preferences...</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-export default PredictCategory;
+export default PredictCategory;

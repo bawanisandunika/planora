@@ -262,7 +262,7 @@ const Register: React.FC = () => {
                 {loading ? (
                   <><Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" /> Creating Account...</>
                 ) : (
-                  <>Create Account <Sparkles className="ml-1.5 h-3.5 w-3.5 transform group-hover:scale-110 transition-transform" /></>
+                  <>Create Account</>
                 )}
               </button>
             </div>

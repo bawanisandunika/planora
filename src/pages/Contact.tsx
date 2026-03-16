@@ -393,7 +393,7 @@ const Contact: React.FC = () => {
                 type="submit"
                 disabled={isSending}
                 className={`flex items-center justify-center w-full px-6 py-3 space-x-2 font-semibold text-white rounded-lg transition-colors ${
-                  isSending ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                  isSending ? 'bg-[#C08552] opacity-70 cursor-not-allowed' : 'bg-[#8C5A3C] hover:bg-[#C08552]'
                 }`}
                 variants={itemVariants}
                 whileHover={!isSending ? { scale: 1.02 } : {}}
@@ -431,7 +431,7 @@ const Contact: React.FC = () => {
             <p className="mb-4 text-gray-600">Thank you for your message. We'll get back to you soon.</p>
             <motion.button
               onClick={() => setShowSuccessPopup(false)}
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 text-white bg-[#8C5A3C] rounded-lg hover:bg-[#C08552]"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

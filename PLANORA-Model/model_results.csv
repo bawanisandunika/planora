@@ -1,0 +1,6 @@
+,best_params,cv_score,test_accuracy,f1_score
+Random Forest,"{'max_depth': 30, 'min_samples_leaf': 2, 'min_samples_split': 5, 'n_estimators': 200}",0.8973809523809525,0.8819047619047619,0.8817095261588345
+Gradient Boosting,"{'learning_rate': 0.05, 'max_depth': 4, 'min_samples_split': 2, 'n_estimators': 200}",0.8904761904761905,0.8790476190476191,0.8789970841131082
+XGBoost,"{'learning_rate': 0.05, 'max_depth': 4, 'n_estimators': 200, 'subsample': 1.0}",0.8997619047619049,0.8923809523809524,0.8919988762948272
+Logistic Regression,"{'C': 1, 'solver': 'lbfgs'}",0.9004761904761904,0.88,0.8800305719432324
+SVM,"{'C': 1, 'gamma': 'auto', 'kernel': 'rbf'}",0.9002380952380952,0.8895238095238095,0.8891768526268304

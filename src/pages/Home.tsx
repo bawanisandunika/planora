@@ -20,6 +20,9 @@ interface Event {
 const Home: React.FC = () => {
   const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [subscribeStatus, setSubscribeStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [subscribeMessage, setSubscribeMessage] = useState('');
 
   useEffect(() => {
       window.scrollTo(0, 0);
@@ -39,6 +42,30 @@ const Home: React.FC = () => {
 
     fetchFeaturedEvents();
   }, []);
+
+  const handleSubscribe = async () => {
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      setSubscribeStatus('error');
+      setSubscribeMessage('Please enter a valid email address.');
+      return;
+    }
+
+    setSubscribeStatus('loading');
+    setSubscribeMessage('');
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/registrations/subscribe', { email });
+      if (response.status === 200) {
+        setSubscribeStatus('success');
+        setSubscribeMessage('Thank you for subscribing! Check your email.');
+        setEmail('');
+        setTimeout(() => setSubscribeStatus('idle'), 5000); // Reset after 5s
+      }
+    } catch (error: any) {
+      setSubscribeStatus('error');
+      setSubscribeMessage(error.response?.data?.message || 'Failed to subscribe. Please try again later.');
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -292,7 +319,7 @@ const Home: React.FC = () => {
           <div className="mt-12 text-center">
             <Link
               to="/events"
-              className="inline-flex items-center px-8 py-3 font-semibold text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
+              className="inline-flex items-center px-8 py-3 font-semibold text-white transition-colors bg-[#8C5A3C] rounded-lg hover:bg-[#C08552]"
             >
               View All Events
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -429,18 +456,32 @@ const Home: React.FC = () => {
           <p className="mb-8 text-xl text-gray-300">
             Subscribe to our newsletter for the latest event updates, exclusive offers, and more.
           </p>
-          <div className="flex flex-col justify-center gap-4 sm:flex-row">
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <input
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
-              className="w-full px-4 py-3 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-80"
+              className="w-full px-4 py-3 text-gray-900 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C5A3C] sm:w-80"
+              disabled={subscribeStatus === 'loading' || subscribeStatus === 'success'}
             />
             <button
-              className="px-6 py-3 font-semibold text-white transition-all duration-300 bg-blue-600 rounded-lg hover:bg-blue-700"
+              onClick={handleSubscribe}
+              disabled={subscribeStatus === 'loading' || subscribeStatus === 'success'}
+              className="px-6 py-3 font-semibold text-white transition-all duration-300 bg-[#8C5A3C] rounded-lg hover:bg-[#C08552] disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Subscribe
+              {subscribeStatus === 'loading' ? 'Subscribing...' : subscribeStatus === 'success' ? 'Subscribed!' : 'Subscribe'}
             </button>
           </div>
+          {subscribeMessage && (
+            <motion.p 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`mt-4 text-sm font-medium ${subscribeStatus === 'success' ? 'text-green-400' : 'text-red-400'}`}
+            >
+              {subscribeMessage}
+            </motion.p>
+          )}
           <p className="mt-4 text-sm text-gray-400">
             We respect your privacy and will never share your information.
           </p>

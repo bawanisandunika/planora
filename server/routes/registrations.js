@@ -284,4 +284,75 @@ router.post('/send-email', async (req, res) => {
   }
 });
 
+// POST endpoint for newsletter subscription
+router.post('/subscribe', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required' });
+  }
+
+  const mailOptions = {
+    from: '"Planora Newsletter" <projects0802@gmail.com>',
+    to: email, 
+    subject: `Welcome to the Planora Newsletter!`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333;">
+        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin: 20px auto;">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(to right, #8C5A3C, #4B2E2B); padding: 30px 20px; text-align: center; border-top-left-radius: 8px; border-top-right-radius: 8px;">
+              <h1 style="color: #ffffff; font-size: 28px; margin: 0;">Welcome to Planora!</h1>
+              <p style="color: #FFF8F0; font-size: 16px; margin-top: 10px;">You are now in the loop.</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding: 30px;">
+              <h2 style="font-size: 22px; color: #4B2E2B; margin-bottom: 20px; text-align: center;">Thanks for Subscribing!</h2>
+              <p style="font-size: 16px; color: #555555; line-height: 1.6; text-align: center; margin-bottom: 25px;">
+                You've successfully subscribed to the Planora newsletter. You will now be among the first to receive updates on amazing new events, exclusive offers, and community news.
+              </p>
+              
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                   <td align="center">
+                     <a href="http://localhost:5173/events" style="display: inline-block; background-color: #C08552; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 16px;">Explore Events Now</a>
+                   </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #FFF8F0; padding: 20px; text-align: center; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">
+              <p style="color: #8C5A3C; font-size: 14px; margin: 0;">
+                Sent from <a href="http://localhost:5173" style="color: #4B2E2B; text-decoration: underline; font-weight: bold;">Planora</a>
+              </p>
+              <p style="color: #8C5A3C; font-size: 12px; margin: 10px 0 0;">
+                If you didn't subscribe, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: 'Subscribed successfully' });
+  } catch (error) {
+    console.error('Error sending subscription email:', error);
+    res.status(500).json({ message: 'Failed to send subscription email' });
+  }
+});
+
 export default router;
