@@ -504,16 +504,17 @@ const Home: React.FC = () => {
                whileInView={{ opacity: 1, scale: 1 }}
                viewport={{ once: true }}
                transition={{ duration: 0.4 }}
+               className="h-full"
             >
               <Link
                 to="/events?category=music"
-                className="block p-6 transition-all duration-300 bg-[#FDF8F5] shadow-md rounded-xl hover:shadow-xl"
+                className="flex flex-col h-full p-6 transition-all duration-300 bg-[#FDF8F5] shadow-md rounded-xl hover:shadow-xl"
               >
-                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
+                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg shrink-0">
                   <Music className="w-16 h-16 text-gray-700" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900">Music & Concerts</h3>
-                <p className="text-gray-600">From rock to jazz, find live performances that move you.</p>
+                <p className="mt-2 text-gray-600 grow">From rock to jazz, find live performances that move you.</p>
               </Link>
             </motion.div>
             <motion.div
@@ -522,16 +523,17 @@ const Home: React.FC = () => {
                whileInView={{ opacity: 1, scale: 1 }}
                viewport={{ once: true }}
                transition={{ duration: 0.4, delay: 0.1 }}
+               className="h-full"
             >
               <Link
                 to="/events?category=tech"
-                className="block p-6 transition-all duration-300 bg-[#F5EBE0] shadow-md rounded-xl hover:shadow-xl"
+                className="flex flex-col h-full p-6 transition-all duration-300 bg-[#F5EBE0] shadow-md rounded-xl hover:shadow-xl"
               >
-                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
+                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg shrink-0">
                   <Cpu className="w-16 h-16 text-gray-700" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900">Tech & Innovation</h3>
-                <p className="text-gray-600">Explore conferences and workshops on cutting-edge technology.</p>
+                <p className="mt-2 text-gray-600 grow">Explore conferences and workshops on cutting-edge technology.</p>
               </Link>
             </motion.div>
             <motion.div
@@ -540,16 +542,17 @@ const Home: React.FC = () => {
                whileInView={{ opacity: 1, scale: 1 }}
                viewport={{ once: true }}
                transition={{ duration: 0.4, delay: 0.2 }}
+               className="h-full"
             >
               <Link
                 to="/events?category=food"
-                className="block p-6 transition-all duration-300 bg-[#E3D5CA] shadow-md rounded-xl hover:shadow-xl"
+                className="flex flex-col h-full p-6 transition-all duration-300 bg-[#E3D5CA] shadow-md rounded-xl hover:shadow-xl"
               >
-                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
+                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg shrink-0">
                   <Utensils className="w-16 h-16 text-gray-700" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900">Food & Drink</h3>
-                <p className="text-gray-600">Savor culinary events, tastings, and cooking classes.</p>
+                <p className="mt-2 text-gray-600 grow">Savor culinary events, tastings, and cooking classes.</p>
               </Link>
             </motion.div>
             <motion.div
@@ -558,16 +561,17 @@ const Home: React.FC = () => {
                whileInView={{ opacity: 1, scale: 1 }}
                viewport={{ once: true }}
                transition={{ duration: 0.4, delay: 0.3 }}
+               className="h-full"
             >
               <Link
                 to="/events?category=art"
-                className="block p-6 transition-all duration-300 bg-[#D5BDAF] shadow-md rounded-xl hover:shadow-xl"
+                className="flex flex-col h-full p-6 transition-all duration-300 bg-[#D5BDAF] shadow-md rounded-xl hover:shadow-xl"
               >
-                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg">
+                <div className="flex items-center justify-center h-40 mb-4 bg-gray-200 rounded-lg shrink-0">
                   <Palette className="w-16 h-16 text-gray-700" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900">Art & Culture</h3>
-                <p className="text-gray-600">Immerse yourself in gallery openings and cultural festivals.</p>
+                <p className="mt-2 text-gray-600 grow">Immerse yourself in gallery openings and cultural festivals.</p>
               </Link>
             </motion.div>
           </div>

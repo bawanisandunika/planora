@@ -113,7 +113,7 @@ const EventDetail: React.FC = () => {
 
       const ai = new GoogleGenAI({ apiKey: apiKey });
       
-      const prompt = `You are a helpful AI assistant answering questions specifically about the following event:
+      const prompt = `You are a helpful AI assistant for an event platform. Here is the context for the current event:
 Title: ${event.title}
 Category: ${event.category}
 Date: ${new Date(event.date).toLocaleDateString()}
@@ -125,7 +125,13 @@ Organizer: ${event.organizer_name}
 Description: ${event.description}
 
 A user is asking: "${userMessage}"
-Please answer their question briefly and friendly, based ONLY on the event information provided above. If you don't know the answer from the context, say so gracefully.`;
+
+Please answer their question briefly and in a friendly manner. You can:
+1. Answer specific questions about the event details.
+2. Explain the potential benefits of attending this event based on its description, title, and category (e.g., networking, learning, entertainment).
+3. Engage in general friendly chat if the user is saying hello or making general conversation.
+
+If they ask about things entirely unrelated to the event or general chat, politely guide them back to the event context.`;
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",

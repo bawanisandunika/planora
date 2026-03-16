@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Users, Calendar, BarChart3, UserCheck, UserX, Eye, User, Lock, Mail, Menu, X } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Users, Calendar, BarChart3, UserCheck, UserX, Eye, User, Lock, Mail, Menu, X, Sparkles } from 'lucide-react';
+import { GoogleGenAI } from '@google/genai';
 
 interface User {
   id: number;
@@ -45,6 +47,9 @@ const AdminDashboard: React.FC = () => {
   const [profileSuccess, setProfileSuccess] = useState('');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<string>('');
+  const [predictiveData, setPredictiveData] = useState<any[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -159,6 +164,63 @@ const AdminDashboard: React.FC = () => {
     totalEvents: events.length,
     activeUsers: users.filter(user => user.status === 'active').length,
     organizers: users.filter(user => user.role === 'Organizer').length,
+  };
+
+  const generateAnalysis = async () => {
+    setIsAnalyzing(true);
+    setAiAnalysis('');
+    setPredictiveData([]);
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+         setAiAnalysis("API key not configured.");
+         setIsAnalyzing(false);
+         return;
+      }
+      
+      const ai = new GoogleGenAI({ apiKey: apiKey });
+      const prompt = `You are an expert data analyst for an event management platform. 
+Examine the following platform data and generate realistic predictive statistics for the next 6 months.
+Return ONLY a valid JSON object (NO markdown formatting, NO backticks) with this exact structure:
+{
+  "insights": "Detailed professional paragraph of predictions and actionable advice based on current data. Do not use asterisks.",
+  "predictions": [
+    { "month": "MonthName", "users": estimatedUsers, "events": estimatedEvents }
+  ]
+}
+
+Data Summary:
+Total Users: ${stats.totalUsers}
+Active Users: ${stats.activeUsers}
+Organizers: ${stats.organizers}
+Total Events: ${stats.totalEvents}
+
+Recent Events:
+${events.slice(0, 5).map(e => `${e.title} on ${new Date(e.date).toLocaleDateString()}`).join('\n')}`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        try {
+            // Attempt to clean any potential markdown formatting the AI might add despite instructions
+            const rawText = response.text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const parsed = JSON.parse(rawText);
+            setAiAnalysis(parsed.insights || 'No insights generated.');
+            setPredictiveData(parsed.predictions || []);
+        } catch (e) {
+            console.error('Failed to parse AI response as JSON:', response.text);
+            setAiAnalysis('Generated response was not valid JSON. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Error generating analysis:', error);
+      setAiAnalysis('An error occurred while generating the analysis.');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   if (loading) {
@@ -344,7 +406,87 @@ const AdminDashboard: React.FC = () => {
           <div className="bg-white shadow-md rounded-xl">
             {activeTab === 'overview' && (
               <div className="p-4 space-y-6 md:p-6">
-                <h3 className="text-lg font-semibold text-gray-900">Platform Overview</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">Platform Overview</h3>
+                </div>
+
+                {/* AI Analysis Section */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-6 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="w-6 h-6 text-blue-600" />
+                      <h4 className="text-xl font-bold text-gray-900">AI Insights</h4>
+                    </div>
+                    <button
+                      onClick={generateAnalysis}
+                      disabled={isAnalyzing}
+                      className="flex items-center px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Analyzing Data...
+                        </>
+                      ) : (
+                        'Generate Analysis'
+                      )}
+                    </button>
+                  </div>
+                  
+                  {aiAnalysis && (
+                    <div className="p-5 mt-4 bg-white rounded-lg shadow-sm">
+                      <div className="space-y-3 text-sm leading-relaxed text-gray-700 whitespace-pre-line">
+                        {aiAnalysis}
+                      </div>
+
+                      {predictiveData.length > 0 && (
+                        <div className="pt-8 mt-8 border-t border-gray-100">
+                          <h5 className="mb-6 text-lg font-semibold text-gray-900">Platform Growth Forecast (Next 6 Months)</h5>
+                          <div className="grid gap-8 lg:grid-cols-2">
+                            <div className="h-64 sm:h-80">
+                              <h6 className="mb-4 text-sm font-medium text-center text-gray-600">Predicted User Growth</h6>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={predictiveData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
+                                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dx={-10} />
+                                  <Tooltip 
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                  />
+                                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                  <Line type="monotone" name="Predicted Users" dataKey="users" stroke="#3B82F6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </div>
+                            
+                            <div className="h-64 sm:h-80">
+                              <h6 className="mb-4 text-sm font-medium text-center text-gray-600">Predicted Event Creation</h6>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={predictiveData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
+                                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dx={-10} />
+                                  <Tooltip 
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    cursor={{ fill: '#F3F4F6' }}
+                                  />
+                                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                  <Bar dataKey="events" name="Predicted Events" fill="#8B5CF6" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {!aiAnalysis && !isAnalyzing && (
+                    <p className="text-sm text-gray-500">
+                      Click the button above to generate AI-powered insights based on your current platform data.
+                    </p>
+                  )}
+                </div>
+
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
                     <h4 className="mb-3 font-medium text-gray-900">Recent User Registrations</h4>
