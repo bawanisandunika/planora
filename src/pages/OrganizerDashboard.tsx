@@ -45,7 +45,7 @@ const OrganizerDashboard: React.FC = () => {
   const [imageInputs, setImageInputs] = useState<number[]>([0]);
   const [existingImagesToDelete, setExistingImagesToDelete] = useState<string[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'events' | 'profile'>('events');
+  const [activeTab, setActiveTab] = useState<'events' | 'profile' | 'analytics'>('events');
   const [profile, setProfile] = useState<UserProfile>({
     id: user?.id || 0,
     name: user?.name || '',
@@ -60,6 +60,31 @@ const OrganizerDashboard: React.FC = () => {
   const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
   const [schedulingSuggestion, setSchedulingSuggestion] = useState('');
   const [isGeneratingSchedule, setIsGeneratingSchedule] = useState(false);
+
+  interface AnalyticsEvent {
+    id: number;
+    title: string;
+    date: string;
+    category: string;
+    status: string;
+    capacity: number;
+    registrations_count: number;
+  }
+  interface AnalyticsParticipant {
+    name: string;
+    email: string;
+    event_title: string;
+    registered_at: string;
+  }
+  interface AnalyticsData {
+    events: AnalyticsEvent[];
+    participants: AnalyticsParticipant[];
+    total_registrations: number;
+    total_capacity: number;
+  }
+
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -88,6 +113,26 @@ const OrganizerDashboard: React.FC = () => {
       fetchEvents();
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    if (activeTab === 'analytics' && user?.id && !analyticsData) {
+      const fetchAnalytics = async () => {
+        setAnalyticsLoading(true);
+        try {
+          const res = await axios.get(
+            `http://localhost:5000/api/events/organizer/${user.id}/analytics`,
+            { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+          );
+          setAnalyticsData(res.data);
+        } catch (err) {
+          console.error('Error fetching analytics:', err);
+        } finally {
+          setAnalyticsLoading(false);
+        }
+      };
+      fetchAnalytics();
+    }
+  }, [activeTab, user?.id]);
 
   const fetchParticipants = async (eventId: number) => {
     try {
@@ -401,6 +446,13 @@ Make it sound exciting and professional.`;
               <User className="w-5 h-5 mr-2" />
               My Profile
             </button>
+            <button
+              onClick={() => { setActiveTab('analytics'); setIsMobileMenuOpen(false); }}
+              className="flex items-center justify-center w-full px-4 py-2 text-blue-600 bg-white rounded-lg"
+            >
+              <span className="mr-2 text-base">📊</span>
+              Analytics
+            </button>
           </div>
         )}
       </div>
@@ -435,6 +487,16 @@ Make it sound exciting and professional.`;
                 }`}
               >
                 My Profile
+              </button>
+              <button
+                onClick={() => setActiveTab('analytics')}
+                className={`px-4 py-2 font-semibold transition-colors rounded-lg md:px-6 md:py-3 ${
+                  activeTab === 'analytics'
+                    ? 'bg-white text-blue-600'
+                    : 'text-white hover:bg-blue-700'
+                }`}
+              >
+                📊 Analytics
               </button>
               {activeTab === 'events' && (
                 <button
@@ -1011,9 +1073,10 @@ Make it sound exciting and professional.`;
                 </div>
               )}
             </>
-          ) : (
+          ) : activeTab === 'profile' ? (
+            /* Profile Tab */
             <div className="p-6">
-              <h2 className="mb-6 text-xl font-semibold text-gray-900">Profile Settings</h2>
+  <h2 className="mb-6 text-xl font-semibold text-gray-900">Profile Settings</h2>
               
               {profileError && (
                 <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
@@ -1113,6 +1176,158 @@ Make it sound exciting and professional.`;
                   </button>
                 </div>
               </form>
+            </div>
+          ) : (
+            /* Analytics Tab */
+            <div className="p-6">
+              <h2 className="mb-6 text-xl font-semibold text-gray-900">📊 Analytics Overview</h2>
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="w-10 h-10 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+                </div>
+              ) : analyticsData ? (
+                <>
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-2 gap-4 mb-8 lg:grid-cols-4">
+                    <div className="p-5 border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+                      <p className="text-sm font-medium text-blue-600">Total Registrations</p>
+                      <p className="mt-1 text-3xl font-bold text-blue-900">{analyticsData.total_registrations}</p>
+                    </div>
+                    <div className="p-5 border border-green-200 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
+                      <p className="text-sm font-medium text-green-600">Capacity Utilization</p>
+                      <p className="mt-1 text-3xl font-bold text-green-900">
+                        {analyticsData.total_capacity > 0
+                          ? Math.round((analyticsData.total_registrations / analyticsData.total_capacity) * 100)
+                          : 0}%
+                      </p>
+                    </div>
+                    <div className="p-5 border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
+                      <p className="text-sm font-medium text-purple-600">Most Popular Event</p>
+                      <p className="mt-1 text-base font-bold truncate text-purple-900">
+                        {analyticsData.events.length > 0
+                          ? [...analyticsData.events].sort((a, b) => b.registrations_count - a.registrations_count)[0]?.title || '—'
+                          : '—'}
+                      </p>
+                    </div>
+                    <div className="p-5 border border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl">
+                      <p className="text-sm font-medium text-orange-600">Total Events</p>
+                      <p className="mt-1 text-3xl font-bold text-orange-900">{analyticsData.events.length}</p>
+                    </div>
+                  </div>
+
+                  {/* Event Performance Bar Chart */}
+                  <div className="mb-8">
+                    <h3 className="mb-4 text-base font-semibold text-gray-800">Event Registration Fill Rate</h3>
+                    <div className="p-4 space-y-5 rounded-xl bg-gray-50">
+                      {analyticsData.events.length === 0 ? (
+                        <p className="py-4 text-sm text-center text-gray-500">No events yet.</p>
+                      ) : (
+                        analyticsData.events.map((event) => {
+                          const pct = event.capacity > 0
+                            ? Math.min(Math.round((event.registrations_count / event.capacity) * 100), 100)
+                            : 0;
+                          return (
+                            <div key={event.id}>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="max-w-xs text-sm font-medium text-gray-700 truncate">{event.title}</span>
+                                <span className="ml-2 text-sm text-gray-500 whitespace-nowrap">
+                                  {event.registrations_count} / {event.capacity} ({pct}%)
+                                </span>
+                              </div>
+                              <div className="w-full h-3 bg-gray-200 rounded-full">
+                                <div
+                                  className={`h-3 rounded-full transition-all duration-700 ${
+                                    pct >= 80 ? 'bg-red-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-green-500'
+                                  }`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              <div className="flex items-center mt-1 space-x-2">
+                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                  event.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}>{event.status}</span>
+                                <span className="text-xs text-gray-400">
+                                  {event.category} • {new Date(event.date).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Participants Table */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-semibold text-gray-800">
+                        All Participants ({analyticsData.participants.length})
+                      </h3>
+                      <button
+                        onClick={() => {
+                          if (analyticsData.participants.length === 0) return;
+                          const headers = ['Name', 'Email', 'Event', 'Registered At'];
+                          const rows = analyticsData.participants.map(p => [
+                            p.name, p.email, p.event_title,
+                            new Date(p.registered_at).toLocaleDateString()
+                          ]);
+                          const csv = [headers, ...rows]
+                            .map(r => r.map(v => `"${v}"`).join(','))
+                            .join('\n');
+                          const blob = new Blob([csv], { type: 'text/csv' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'participants.csv';
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        }}
+                        className="flex items-center px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
+                      >
+                        ⬇ Download CSV
+                      </button>
+                    </div>
+                    {analyticsData.participants.length === 0 ? (
+                      <div className="py-10 text-center text-gray-500 rounded-xl bg-gray-50">
+                        No registrations yet across your events.
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto border border-gray-200 rounded-xl">
+                        <table className="w-full text-sm">
+                          <thead className="border-b border-gray-200 bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 font-semibold text-left text-gray-600">Name</th>
+                              <th className="px-4 py-3 font-semibold text-left text-gray-600">Email</th>
+                              <th className="px-4 py-3 font-semibold text-left text-gray-600">Event</th>
+                              <th className="px-4 py-3 font-semibold text-left text-gray-600">Registered</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {analyticsData.participants.map((p, i) => (
+                              <tr key={i} className="transition-colors hover:bg-gray-50">
+                                <td className="px-4 py-3 font-medium text-gray-900">{p.name}</td>
+                                <td className="px-4 py-3 text-gray-600">{p.email}</td>
+                                <td className="px-4 py-3">
+                                  <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full">
+                                    {p.event_title}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-gray-500">
+                                  {new Date(p.registered_at).toLocaleDateString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="py-10 text-center text-gray-500">
+                  Could not load analytics. Please try again.
+                </div>
+              )}
             </div>
           )}
         </div>

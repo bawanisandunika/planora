@@ -129,13 +129,16 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Get user by ID without token authentication
+// Get user by ID without token authentication (includes ML profile fields)
 router.get('/rec/:id', async (req, res) => {
   try {
     const userId = req.params.id;
 
     const [users] = await db.execute(
-      'SELECT id, email, name, role, status, preference FROM users WHERE id = ?',
+      `SELECT id, email, name, role, status, preference,
+        age, gender, tech_spend, music_freq, sports_hours,
+        business_interest, edu_freq, food_interest, health_priority
+       FROM users WHERE id = ?`,
       [userId]
     );
 
@@ -150,5 +153,24 @@ router.get('/rec/:id', async (req, res) => {
   }
 });
 
+
+// Get all users with full profile for ML analytics (Admin only)
+router.get('/analytics', authenticateToken, requireRole(['Admin']), async (req, res) => {
+  try {
+    const [users] = await db.execute(
+      `SELECT 
+        id, name, email, role, status, preference,
+        age, gender, tech_spend, music_freq, sports_hours,
+        business_interest, edu_freq, food_interest, health_priority,
+        created_at
+      FROM users
+      ORDER BY created_at ASC`
+    );
+    res.json(users);
+  } catch (error) {
+    console.error('Get analytics users error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 export default router;

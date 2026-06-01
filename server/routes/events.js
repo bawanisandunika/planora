@@ -305,6 +305,47 @@ router.delete('/image/:eventId', authenticateToken, requireRole(['Admin', 'Organ
   }
 });
 
+// Get analytics data for organizer (must be before /organizer/:organizerId)
+router.get('/organizer/:organizerId/analytics', authenticateToken, async (req, res) => {
+  try {
+    const organizerId = req.params.organizerId;
+
+    // Check authorization
+    if (req.user.role !== 'Admin' && req.user.id !== parseInt(organizerId)) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    // Events with registration counts
+    const [events] = await db.execute(`
+      SELECT e.id, e.title, e.date, e.time, e.location, e.category, e.status, e.capacity,
+             COUNT(r.id) as registrations_count
+      FROM events e
+      LEFT JOIN registrations r ON e.id = r.event_id
+      WHERE e.organizer_id = ?
+      GROUP BY e.id
+      ORDER BY e.date ASC
+    `, [organizerId]);
+
+    // All participants across organizer's events
+    const [participants] = await db.execute(`
+      SELECT u.name, u.email, e.title as event_title, r.created_at as registered_at
+      FROM registrations r
+      JOIN users u ON r.user_id = u.id
+      JOIN events e ON r.event_id = e.id
+      WHERE e.organizer_id = ?
+      ORDER BY r.created_at DESC
+    `, [organizerId]);
+
+    const total_registrations = events.reduce((sum, e) => sum + parseInt(e.registrations_count || 0), 0);
+    const total_capacity = events.reduce((sum, e) => sum + parseInt(e.capacity || 0), 0);
+
+    res.json({ events, participants, total_registrations, total_capacity });
+  } catch (error) {
+    console.error('Get organizer analytics error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get events by organizer
 router.get('/organizer/:organizerId', authenticateToken, async (req, res) => {
   try {
