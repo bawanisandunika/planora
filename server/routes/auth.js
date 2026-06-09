@@ -144,7 +144,19 @@ router.post('/login', async (req, res) => {
 // Update preference
 router.patch('/update-preference', async (req, res) => {
   try {
-    const { email, preference } = req.body;
+    const { 
+      email, 
+      preference,
+      age,
+      gender,
+      tech_spend,
+      music_freq,
+      sports_hours,
+      business_interest,
+      edu_freq,
+      food_interest,
+      health_priority
+    } = req.body;
 
     // Verify token
     const token = req.headers.authorization?.split(' ')[1];
@@ -159,10 +171,33 @@ router.patch('/update-preference', async (req, res) => {
       return res.status(401).json({ message: 'Invalid or expired token' });
     }
 
-    // Update preference
+    // Update preference and demographic/behavioral data
     const [result] = await db.execute(
-      'UPDATE users SET preference = ? WHERE email = ?',
-      [preference, email]
+      `UPDATE users SET 
+        preference = ?,
+        age = COALESCE(?, age),
+        gender = COALESCE(?, gender),
+        tech_spend = COALESCE(?, tech_spend),
+        music_freq = COALESCE(?, music_freq),
+        sports_hours = COALESCE(?, sports_hours),
+        business_interest = COALESCE(?, business_interest),
+        edu_freq = COALESCE(?, edu_freq),
+        food_interest = COALESCE(?, food_interest),
+        health_priority = COALESCE(?, health_priority)
+       WHERE email = ?`,
+      [
+        preference, 
+        age || null, 
+        gender || null, 
+        tech_spend || null, 
+        music_freq || null, 
+        sports_hours || null, 
+        business_interest || null, 
+        edu_freq || null, 
+        food_interest || null, 
+        health_priority || null, 
+        email
+      ]
     );
 
     if (result.affectedRows === 0) {

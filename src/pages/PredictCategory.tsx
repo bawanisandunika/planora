@@ -31,13 +31,13 @@ const PredictCategory: React.FC = () => {
   const [formData, setFormData] = useState({
     age: 18,
     gender: 'Male',
-    tech_spend: 3,
-    music_freq: 3,
-    sports_hours: 3,
-    business_interest: 3,
-    edu_freq: 3,
-    food_interest: 3,
-    health_priority: 3,
+    tech_spend: 0,
+    music_freq: 0,
+    sports_hours: 0,
+    business_interest: 0,
+    edu_freq: 0,
+    food_interest: 0,
+    health_priority: 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -78,7 +78,19 @@ const PredictCategory: React.FC = () => {
     }, 200);
 
     try {
-      const predictionResponse = await axios.post('http://localhost:5001/predict', formData, {
+      const payload = {
+        age: formData.age,
+        gender: formData.gender,
+        tech_spend: formData.tech_spend || 3,
+        music_freq: formData.music_freq || 3,
+        sports_hours: formData.sports_hours || 3,
+        business_interest: formData.business_interest || 3,
+        edu_freq: formData.edu_freq || 3,
+        food_interest: formData.food_interest || 3,
+        health_priority: formData.health_priority || 3,
+      };
+
+      const predictionResponse = await axios.post('http://localhost:5001/predict', payload, {
         headers: { 'Content-Type': 'application/json' },
       });
       const predictedCategory = predictionResponse.data.prediction;
@@ -93,7 +105,19 @@ const PredictCategory: React.FC = () => {
 
       await axios.patch(
         'http://localhost:5000/api/auth/update-preference',
-        { email, preference: predictedCategory },
+        { 
+          email, 
+          preference: predictedCategory,
+          age: payload.age,
+          gender: payload.gender,
+          tech_spend: payload.tech_spend,
+          music_freq: payload.music_freq,
+          sports_hours: payload.sports_hours,
+          business_interest: payload.business_interest,
+          edu_freq: payload.edu_freq,
+          food_interest: payload.food_interest,
+          health_priority: payload.health_priority
+        },
         {
           headers: {
             'Content-Type': 'application/json',
