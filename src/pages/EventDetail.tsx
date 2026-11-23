@@ -133,17 +133,37 @@ Please answer their question briefly and in a friendly manner. You can:
 
 If they ask about things entirely unrelated to the event or general chat, politely guide them back to the event context.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-      });
-
-      if (response.text) {
-        setChatMessages((prev) => [...prev, { role: 'model', content: response.text || "" }]);
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-3.5-flash-lite",
+          contents: prompt,
+        });
+      } catch (liteErr) {
+        console.warn("gemini-3.5-flash-lite failed, falling back to gemini-3.8-flash:", liteErr);
+        response = await ai.models.generateContent({
+          model: "gemini-3.8-flash",
+          contents: prompt,
+        });
       }
-    } catch (error) {
+
+      if (response && response.text) {
+        setChatMessages((prev) => [...prev, { role: 'model', content: response.text || "" }]);
+      } else {
+        setChatMessages((prev) => [...prev, { role: 'model', content: "I couldn't generate a response just now. Please try asking again!" }]);
+      }
+    } catch (error: any) {
         console.error("Error generating chat response:", error);
-        setChatMessages((prev) => [...prev, { role: 'model', content: "Sorry, I am having trouble answering right now. Please try again later." }]);
+        let errMsg = "Sorry, I am having trouble answering right now. Please try again later.";
+        const errorStr = (error?.message || error?.toString() || "").toLowerCase();
+        if (errorStr.includes("quota") || errorStr.includes("resource_exhausted") || errorStr.includes("429")) {
+          errMsg = "The AI service is experiencing high demand right now. Please wait a few seconds and try again!";
+        } else if (errorStr.includes("leaked")) {
+          errMsg = "The Gemini API key was reported as leaked and blocked by Google. Please update VITE_GEMINI_API_KEY in your .env file.";
+        } else if (errorStr.includes("network") || errorStr.includes("failed to fetch")) {
+          errMsg = "Network error connecting to AI. Please check your internet connection.";
+        }
+        setChatMessages((prev) => [...prev, { role: 'model', content: errMsg }]);
     } finally {
         setIsChatLoading(false);
     }

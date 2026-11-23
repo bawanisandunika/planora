@@ -1,6 +1,11 @@
 const test = async () => {
     try {
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyBWMkkg5cLy-8aoRSN4NdesUwN7gZNCAOA', {
+      const apiKey = process.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        console.error("VITE_GEMINI_API_KEY is not set.");
+        return;
+      }
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

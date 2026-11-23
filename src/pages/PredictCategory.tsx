@@ -131,25 +131,47 @@ const PredictCategory: React.FC = () => {
       setResult(`Your vibe is: ${predictedCategory}`);
 
       setGeneratingSuggestion(true);
+      const fallbackSuggestions: Record<string, string> = {
+        Tech: "Since you enjoy Tech, checking out Music or Business innovation events could provide a great balance!",
+        Music: "Along with Music, exploring Food and Art festivals will complement your creative vibes!",
+        Sports: "To complement an active Sports lifestyle, consider Health & Wellness or outdoor community events!",
+        Business: "Pairing Business networking with Tech and Leadership seminars can unlock exciting new opportunities!",
+        Education: "Pairing Education with Tech workshops or Business meetups will expand your practical skills!",
+        Art: "Immerse yourself in Music or cultural exhibitions to fuel your artistic inspiration!",
+        Food: "Pair great culinary experiences with Art or Social gatherings to connect with other food lovers!",
+        Health: "Pairing Health and wellness with Sports or outdoor recreation keeps both mind and body energized!",
+      };
+
       try {
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         if (apiKey) {
           const ai = new GoogleGenAI({ apiKey: apiKey });
           const prompt = `The user's favorite event category is ${predictedCategory}. Suggest one other complementary event category they might enjoy (e.g., if Tech, suggest Music for relaxation; if Sports, suggest Art for creativity). Provide a single, friendly sentence explaining why it's a good complement for them. Be brief.`;
           
-          const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-          });
+          let response;
+          try {
+            response = await ai.models.generateContent({
+              model: "gemini-3.5-flash-lite",
+              contents: prompt,
+            });
+          } catch {
+            response = await ai.models.generateContent({
+              model: "gemini-3.8-flash",
+              contents: prompt,
+            });
+          }
           
           if (response.text) {
             setSuggestion(response.text);
+          } else {
+            setSuggestion(fallbackSuggestions[predictedCategory] || "Explore related events on Planora to discover exciting activities!");
           }
         } else {
-             console.warn("Gemini API key not found. Skipping AI suggestion.");
+          setSuggestion(fallbackSuggestions[predictedCategory] || "Explore related events on Planora to discover exciting activities!");
         }
       } catch (aiError) {
-        console.error("Failed to generate AI suggestion:", aiError);
+        console.warn("Gemini API call failed, using fallback recommendation:", aiError);
+        setSuggestion(fallbackSuggestions[predictedCategory] || "Explore related events on Planora to discover exciting activities!");
       } finally {
         setGeneratingSuggestion(false);
       }

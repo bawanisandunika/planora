@@ -166,10 +166,18 @@ Make it sound exciting and professional.`;
 
       const ai = new GoogleGenAI({ apiKey: apiKey });
       
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash", 
-        contents: prompt,
-      });
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-3.5-flash-lite", 
+          contents: prompt,
+        });
+      } catch {
+        response = await ai.models.generateContent({
+          model: "gemini-3.8-flash", 
+          contents: prompt,
+        });
+      }
       
       const text = response.text;
       
@@ -205,10 +213,18 @@ Make it sound exciting and professional.`;
       const ai = new GoogleGenAI({ apiKey: apiKey });
       const prompt = `As an expert event planner, what is the statistically best day of the week and time of day to host a ${newEvent.category} event to maximize attendance? Please provide a 1-2 sentence compelling suggestion. Be concise.`;
       
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash", 
-        contents: prompt,
-      });
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-3.5-flash-lite", 
+          contents: prompt,
+        });
+      } catch {
+        response = await ai.models.generateContent({
+          model: "gemini-3.8-flash", 
+          contents: prompt,
+        });
+      }
 
       if (response.text) {
         setSchedulingSuggestion(response.text);
